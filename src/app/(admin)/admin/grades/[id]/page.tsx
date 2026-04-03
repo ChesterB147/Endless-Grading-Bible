@@ -467,7 +467,7 @@ export default function GradeEditorPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b" style={{ borderColor: "#c0c8c5" }}>
+      <div className="flex border-b" style={{ borderColor: "#c0c8c5", color: "#262262" }}>
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -475,7 +475,7 @@ export default function GradeEditorPage() {
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-[#12b3c3] text-[#12b3c3]"
-                : "border-transparent text-[#c0c8c5] hover:text-[#262262]"
+                : "border-transparent text-[#262262]/60 hover:text-[#262262]"
             }`}
           >
             {tab.label}
@@ -486,30 +486,20 @@ export default function GradeEditorPage() {
       {/* Overview Tab */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>Name</label>
               <input
                 type="text"
                 value={grade.name}
                 onChange={(e) => setGrade({ ...grade, name: e.target.value })}
                 className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: "#c0c8c5" }}
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Slug</label>
-              <input
-                type="text"
-                value={grade.slug}
-                onChange={(e) => setGrade({ ...grade, slug: e.target.value })}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: "#c0c8c5" }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                ISRI Code
+              <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
+                ISRI Code <span className="font-normal opacity-60">(optional)</span>
               </label>
               <input
                 type="text"
@@ -518,12 +508,12 @@ export default function GradeEditorPage() {
                   setGrade({ ...grade, isri_code: e.target.value || null })
                 }
                 className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: "#c0c8c5" }}
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
               />
             </div>
           </div>
 
-          <label className="flex items-center space-x-2 text-sm">
+          <label className="flex items-center space-x-2 text-sm" style={{ color: "#262262" }}>
             <input
               type="checkbox"
               checked={grade.dispute_flag}
@@ -555,7 +545,7 @@ export default function GradeEditorPage() {
                     setSpecPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <input
                   type="text"
@@ -567,7 +557,7 @@ export default function GradeEditorPage() {
                     setSpecPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <button
                   onClick={() =>
@@ -608,7 +598,7 @@ export default function GradeEditorPage() {
                     setBuyerNotesPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <input
                   type="text"
@@ -620,7 +610,7 @@ export default function GradeEditorPage() {
                     setBuyerNotesPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <button
                   onClick={() =>
@@ -665,7 +655,7 @@ export default function GradeEditorPage() {
                     setPriceImpactPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <input
                   type="text"
@@ -677,7 +667,7 @@ export default function GradeEditorPage() {
                     setPriceImpactPairs(updated);
                   }}
                   className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <button
                   onClick={() =>
@@ -730,7 +720,7 @@ export default function GradeEditorPage() {
               <div
                 key={photo.id}
                 className="rounded-lg border p-3"
-                style={{ borderColor: "#c0c8c5" }}
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
               >
                 <img
                   src={photo.url}
@@ -751,7 +741,7 @@ export default function GradeEditorPage() {
                     )
                   }
                   className="w-full rounded border px-2 py-1 text-xs mb-2"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
                 <select
                   value={photo.status}
@@ -768,7 +758,7 @@ export default function GradeEditorPage() {
                     )
                   }
                   className="w-full rounded border px-2 py-1 text-xs mb-2"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 >
                   <option value="acceptable">Acceptable</option>
                   <option value="reject">Reject</option>
@@ -785,7 +775,7 @@ export default function GradeEditorPage() {
           </div>
 
           {photos.length === 0 && (
-            <p className="text-sm" style={{ color: "#c0c8c5" }}>
+            <p className="text-sm" style={{ color: "#262262" }}>
               No photos yet
             </p>
           )}
@@ -809,7 +799,7 @@ export default function GradeEditorPage() {
               <div
                 key={product.id}
                 className="rounded-lg border p-4"
-                style={{ borderColor: "#c0c8c5" }}
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
               >
                 <div className="flex items-center justify-between">
                   <button
@@ -836,7 +826,7 @@ export default function GradeEditorPage() {
                 {isExpanded && (
                   <div className="mt-4 space-y-3 pl-4">
                     <div>
-                      <label className="block text-xs font-medium mb-1">
+                      <label className="block text-xs font-medium mb-1" style={{ color: "#262262" }}>
                         Name
                       </label>
                       <input
@@ -852,11 +842,11 @@ export default function GradeEditorPage() {
                           )
                         }
                         className="w-full rounded-lg border px-3 py-1.5 text-sm"
-                        style={{ borderColor: "#c0c8c5" }}
+                        style={{ borderColor: "#c0c8c5", color: "#262262" }}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium mb-1">
+                      <label className="block text-xs font-medium mb-1" style={{ color: "#262262" }}>
                         Description
                       </label>
                       <textarea
@@ -872,11 +862,11 @@ export default function GradeEditorPage() {
                         }
                         rows={2}
                         className="w-full rounded-lg border px-3 py-1.5 text-sm"
-                        style={{ borderColor: "#c0c8c5" }}
+                        style={{ borderColor: "#c0c8c5", color: "#262262" }}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium mb-1">
+                      <label className="block text-xs font-medium mb-1" style={{ color: "#262262" }}>
                         Search Terms (comma-separated)
                       </label>
                       <input
@@ -898,14 +888,14 @@ export default function GradeEditorPage() {
                           )
                         }
                         className="w-full rounded-lg border px-3 py-1.5 text-sm"
-                        style={{ borderColor: "#c0c8c5" }}
+                        style={{ borderColor: "#c0c8c5", color: "#262262" }}
                       />
                     </div>
 
                     {/* Components */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-xs font-semibold">Components</h4>
+                        <h4 className="text-xs font-semibold" style={{ color: "#262262" }}>Components</h4>
                         <button
                           onClick={() => addComponent(product.id)}
                           className="text-xs"
@@ -941,7 +931,7 @@ export default function GradeEditorPage() {
                               )
                             }
                             className="flex-1 rounded border px-2 py-1 text-xs"
-                            style={{ borderColor: "#c0c8c5" }}
+                            style={{ borderColor: "#c0c8c5", color: "#262262" }}
                             placeholder="Name"
                           />
                           <select
@@ -969,7 +959,7 @@ export default function GradeEditorPage() {
                               )
                             }
                             className="rounded border px-2 py-1 text-xs"
-                            style={{ borderColor: "#c0c8c5" }}
+                            style={{ borderColor: "#c0c8c5", color: "#262262" }}
                           >
                             <option value="acceptable">Acceptable</option>
                             <option value="remove">Remove</option>
@@ -998,7 +988,7 @@ export default function GradeEditorPage() {
                               )
                             }
                             className="flex-1 rounded border px-2 py-1 text-xs"
-                            style={{ borderColor: "#c0c8c5" }}
+                            style={{ borderColor: "#c0c8c5", color: "#262262" }}
                             placeholder="Note"
                           />
                           <button
@@ -1019,7 +1009,7 @@ export default function GradeEditorPage() {
           })}
 
           {products.length === 0 && (
-            <p className="text-sm" style={{ color: "#c0c8c5" }}>
+            <p className="text-sm" style={{ color: "#262262" }}>
               No products yet
             </p>
           )}
@@ -1041,7 +1031,7 @@ export default function GradeEditorPage() {
             <div
               key={tip.id}
               className="rounded-lg border p-4"
-              style={{ borderColor: "#c0c8c5" }}
+              style={{ borderColor: "#c0c8c5", color: "#262262" }}
             >
               <div className="flex items-start gap-3">
                 <div className="flex flex-col gap-1">
@@ -1076,7 +1066,7 @@ export default function GradeEditorPage() {
                       )
                     }
                     className="w-full rounded-lg border px-3 py-1.5 text-sm font-medium"
-                    style={{ borderColor: "#c0c8c5" }}
+                    style={{ borderColor: "#c0c8c5", color: "#262262" }}
                     placeholder="Title"
                   />
                   <textarea
@@ -1092,7 +1082,7 @@ export default function GradeEditorPage() {
                     }
                     rows={2}
                     className="w-full rounded-lg border px-3 py-1.5 text-sm"
-                    style={{ borderColor: "#c0c8c5" }}
+                    style={{ borderColor: "#c0c8c5", color: "#262262" }}
                     placeholder="Body"
                   />
                   <select
@@ -1110,7 +1100,7 @@ export default function GradeEditorPage() {
                       )
                     }
                     className="rounded-lg border px-3 py-1.5 text-sm"
-                    style={{ borderColor: "#c0c8c5" }}
+                    style={{ borderColor: "#c0c8c5", color: "#262262" }}
                   >
                     <option value="test">Test</option>
                     <option value="rule">Rule</option>
@@ -1129,7 +1119,7 @@ export default function GradeEditorPage() {
           ))}
 
           {tips.length === 0 && (
-            <p className="text-sm" style={{ color: "#c0c8c5" }}>
+            <p className="text-sm" style={{ color: "#262262" }}>
               No field tips yet
             </p>
           )}
@@ -1143,7 +1133,7 @@ export default function GradeEditorPage() {
             Pending
           </h3>
           {edgeCases.filter((ec) => !ec.approved).length === 0 ? (
-            <p className="text-sm" style={{ color: "#c0c8c5" }}>
+            <p className="text-sm" style={{ color: "#262262" }}>
               No pending edge cases
             </p>
           ) : (
@@ -1153,7 +1143,7 @@ export default function GradeEditorPage() {
                 <div
                   key={ec.id}
                   className="rounded-lg border p-4"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -1199,7 +1189,7 @@ export default function GradeEditorPage() {
             Approved
           </h3>
           {edgeCases.filter((ec) => ec.approved).length === 0 ? (
-            <p className="text-sm" style={{ color: "#c0c8c5" }}>
+            <p className="text-sm" style={{ color: "#262262" }}>
               No approved edge cases
             </p>
           ) : (
@@ -1209,7 +1199,7 @@ export default function GradeEditorPage() {
                 <div
                   key={ec.id}
                   className="rounded-lg border p-4 opacity-75"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 >
                   <p className="text-sm">{ec.scenario}</p>
                   {ec.decision && (

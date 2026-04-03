@@ -177,7 +177,7 @@ export default function GradesPage() {
           value={filterCommodity}
           onChange={(e) => setFilterCommodity(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm"
-          style={{ borderColor: "#c0c8c5" }}
+          style={{ borderColor: "#c0c8c5", color: "#262262" }}
         >
           <option value="all">All Commodities</option>
           {commodities.map((c) => (
@@ -190,7 +190,7 @@ export default function GradesPage() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "#c0c8c5" }}>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" style={{ color: "#262262" }}>
           <thead>
             <tr style={{ backgroundColor: "#262262" }}>
               <th className="px-4 py-2.5 text-left text-white font-medium">
@@ -198,9 +198,6 @@ export default function GradesPage() {
               </th>
               <th className="px-4 py-2.5 text-left text-white font-medium">
                 Grade Name
-              </th>
-              <th className="px-4 py-2.5 text-left text-white font-medium">
-                ISRI Code
               </th>
               <th className="px-4 py-2.5 text-left text-white font-medium">
                 Products
@@ -220,9 +217,9 @@ export default function GradesPage() {
             {filteredGrades.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-6 text-center"
-                  style={{ color: "#c0c8c5" }}
+                  style={{ color: "#262262" }}
                 >
                   No grades found
                 </td>
@@ -231,18 +228,11 @@ export default function GradesPage() {
               filteredGrades.map((grade, i) => (
                 <tr
                   key={grade.id}
-                  style={
-                    i % 2 !== 0
-                      ? { backgroundColor: "#c0c8c5", backgroundImage: "none", opacity: 0.2 }
-                      : undefined
-                  }
                   className={i % 2 === 0 ? "bg-white" : ""}
+                  style={i % 2 !== 0 ? { backgroundColor: "#f0f2f1" } : undefined}
                 >
-                  <td className="px-4 py-2.5">
-                    {grade.commodities?.name ?? "—"}
-                  </td>
+                  <td className="px-4 py-2.5">{grade.commodities?.name ?? "—"}</td>
                   <td className="px-4 py-2.5 font-medium">{grade.name}</td>
-                  <td className="px-4 py-2.5">{grade.isri_code ?? "—"}</td>
                   <td className="px-4 py-2.5">
                     {productCounts[grade.id] ?? 0}
                   </td>
@@ -285,7 +275,7 @@ export default function GradesPage() {
       {/* New Grade Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" style={{ color: "#262262" }}>
             <h2
               className="text-lg font-bold mb-4"
               style={{ color: "#262262" }}
@@ -294,7 +284,7 @@ export default function GradesPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
                   Commodity
                 </label>
                 <select
@@ -303,7 +293,7 @@ export default function GradesPage() {
                     setNewGrade({ ...newGrade, commodity_id: e.target.value })
                   }
                   className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 >
                   <option value="">Select commodity...</option>
                   {commodities.map((c) => (
@@ -314,7 +304,7 @@ export default function GradesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>Name</label>
                 <input
                   type="text"
                   value={newGrade.name}
@@ -327,12 +317,12 @@ export default function GradesPage() {
                     });
                   }}
                   className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  ISRI Code <span className="text-[#c0c8c5] font-normal">(optional)</span>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
+                  ISRI Code <span className="font-normal opacity-60">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -341,10 +331,10 @@ export default function GradesPage() {
                     setNewGrade({ ...newGrade, isri_code: e.target.value })
                   }
                   className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />
               </div>
-              <label className="flex items-center space-x-2 text-sm">
+              <label className="flex items-center space-x-2 text-sm" style={{ color: "#262262" }}>
                 <input
                   type="checkbox"
                   checked={newGrade.dispute_flag}
@@ -363,7 +353,7 @@ export default function GradesPage() {
               <button
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 text-sm rounded-lg border"
-                style={{ borderColor: "#c0c8c5" }}
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
               >
                 Cancel
               </button>

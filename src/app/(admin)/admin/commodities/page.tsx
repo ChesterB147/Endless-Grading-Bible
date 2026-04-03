@@ -134,7 +134,7 @@ export default function CommoditiesPage() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="mb-6 p-4 rounded border" style={{ borderColor: "#c0c8c5" }}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="mb-4">
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>Name</label>
               <input
@@ -142,23 +142,11 @@ export default function CommoditiesPage() {
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  if (!slug) setSlug(generateSlug(e.target.value));
                 }}
                 placeholder="e.g. Copper"
                 className="w-full px-3 py-2 border rounded text-sm"
                 style={{ borderColor: "#c0c8c5" }}
                 required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>Slug</label>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="auto-generated from name"
-                className="w-full px-3 py-2 border rounded text-sm"
-                style={{ borderColor: "#c0c8c5" }}
               />
             </div>
           </div>
@@ -179,7 +167,6 @@ export default function CommoditiesPage() {
             <tr style={{ backgroundColor: "#262262" }}>
               <th className="px-4 py-3 text-left text-white font-medium">Order</th>
               <th className="px-4 py-3 text-left text-white font-medium">Name</th>
-              <th className="px-4 py-3 text-left text-white font-medium">Slug</th>
               <th className="px-4 py-3 text-left text-white font-medium">Status</th>
               <th className="px-4 py-3 text-left text-white font-medium">Actions</th>
             </tr>
@@ -199,15 +186,6 @@ export default function CommoditiesPage() {
                         style={{ borderColor: "#c0c8c5" }}
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="text"
-                        value={editSlug}
-                        onChange={(e) => setEditSlug(e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-sm"
-                        style={{ borderColor: "#c0c8c5" }}
-                      />
-                    </td>
                     <td className="px-4 py-3">{c.active ? "Active" : "Archived"}</td>
                     <td className="px-4 py-3 space-x-2">
                       <button onClick={() => handleUpdate(c.id)} className="text-sm font-medium" style={{ color: "#12b3c3" }}>Save</button>
@@ -223,7 +201,6 @@ export default function CommoditiesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 font-medium" style={{ color: "#262262" }}>{c.name}</td>
-                    <td className="px-4 py-3" style={{ color: "#c0c8c5" }}>{c.slug}</td>
                     <td className="px-4 py-3">
                       <span
                         className="text-xs px-2 py-0.5 rounded-full text-white"
@@ -253,7 +230,7 @@ export default function CommoditiesPage() {
               </tr>
             ))}
             {commodities.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center" style={{ color: "#c0c8c5" }}>No commodities yet. Create your first one above.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-8 text-center" style={{ color: "#c0c8c5" }}>No commodities yet. Create your first one above.</td></tr>
             )}
           </tbody>
         </table>

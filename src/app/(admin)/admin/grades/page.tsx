@@ -331,20 +331,8 @@ export default function GradesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Slug</label>
-                <input
-                  type="text"
-                  value={newGrade.slug}
-                  onChange={(e) =>
-                    setNewGrade({ ...newGrade, slug: e.target.value })
-                  }
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{ borderColor: "#c0c8c5" }}
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">
-                  ISRI Code
+                  ISRI Code <span className="text-[#c0c8c5] font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"

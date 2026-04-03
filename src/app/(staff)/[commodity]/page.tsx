@@ -99,7 +99,7 @@ export default function GradeListPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {grade.isri_code && (
-                        <span className="bg-[#c0c8c5]/30 text-gray-600 text-xs font-mono px-2 py-0.5 rounded">
+                        <span className="bg-[#12b3c3]/10 text-[#12b3c3] text-xs font-mono px-2 py-0.5 rounded">
                           {grade.isri_code}
                         </span>
                       )}

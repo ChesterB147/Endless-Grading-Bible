@@ -9,13 +9,13 @@
   "background_color": "#12b3c3",
   "icons": [
     {
-      "src": "/icons/mo_icon_192.png",
+      "src": "/icons/Endless Logo_Navy.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/mo_icon_512.png",
+      "src": "/icons/Endless Logo_Navy.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

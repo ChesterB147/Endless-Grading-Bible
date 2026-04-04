@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icons/mo_icon_192.png" />
+        <link rel="apple-touch-icon" href="/icons/Endless Logo_Navy.png" />
       </head>
       <body className="antialiased bg-white text-gray-900 min-h-screen">
         {children}

@@ -10,12 +10,11 @@ import type {
   Product,
   ProductComponent,
   FieldTip,
-  EdgeCase,
   GradingCheckGroup,
   GradingCheck,
 } from "@/lib/types";
 
-type Tab = "overview" | "photos" | "products" | "tips" | "exceptions";
+type Tab = "overview" | "photos" | "products" | "tips";
 
 export default function GradeEditorPage() {
   const params = useParams();
@@ -25,7 +24,6 @@ export default function GradeEditorPage() {
   const [photos, setPhotos] = useState<GradePhoto[]>([]);
   const [products, setProducts] = useState<(Product & { product_components?: ProductComponent[] })[]>([]);
   const [tips, setTips] = useState<FieldTip[]>([]);
-  const [edgeCases, setEdgeCases] = useState<EdgeCase[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,8 +37,6 @@ export default function GradeEditorPage() {
 
   // Legacy spec_json pairs (for backwards-compatible entries)
   const [specPairs, setSpecPairs] = useState<{ key: string; value: string }[]>([]);
-  const [buyerNotesPairs, setBuyerNotesPairs] = useState<{ key: string; value: string }[]>([]);
-  const [priceImpactPairs, setPriceImpactPairs] = useState<{ key: string; value: string }[]>([]);
 
   // Expanded products
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
@@ -49,7 +45,7 @@ export default function GradeEditorPage() {
     try {
       const supabase = createClient();
 
-      const [gradeRes, photosRes, productsRes, tipsRes, edgeCasesRes] =
+      const [gradeRes, photosRes, productsRes, tipsRes] =
         await Promise.all([
           supabase.from("grades").select("*").eq("id", gradeId).single(),
           supabase
@@ -67,11 +63,6 @@ export default function GradeEditorPage() {
             .select("*")
             .eq("grade_id", gradeId)
             .order("sort_order"),
-          supabase
-            .from("edge_cases")
-            .select("*")
-            .eq("grade_id", gradeId)
-            .order("submitted_at", { ascending: false }),
         ]);
 
       if (gradeRes.error) throw gradeRes.error;
@@ -81,7 +72,6 @@ export default function GradeEditorPage() {
       setPhotos(photosRes.data ?? []);
       setProducts(productsRes.data ?? []);
       setTips(tipsRes.data ?? []);
-      setEdgeCases(edgeCasesRes.data ?? []);
 
       // Parse spec_json for structured editors
       const sj = g.spec_json || {};
@@ -95,18 +85,6 @@ export default function GradeEditorPage() {
         Object.entries(sj)
           .filter(([key]) => !structuredKeys.includes(key))
           .map(([key, value]) => ({ key, value }))
-      );
-      setBuyerNotesPairs(
-        Object.entries(g.buyer_notes_json || {}).map(([key, value]) => ({
-          key,
-          value,
-        }))
-      );
-      setPriceImpactPairs(
-        Object.entries(g.price_impact_json || {}).map(([key, value]) => ({
-          key,
-          value,
-        }))
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load grade");
@@ -137,15 +115,6 @@ export default function GradeEditorPage() {
         if (p.key.trim()) specJson[p.key.trim()] = p.value;
       }
 
-      const buyerNotesJson: Record<string, string> = {};
-      for (const p of buyerNotesPairs) {
-        if (p.key.trim()) buyerNotesJson[p.key.trim()] = p.value;
-      }
-      const priceImpactJson: Record<string, string> = {};
-      for (const p of priceImpactPairs) {
-        if (p.key.trim()) priceImpactJson[p.key.trim()] = p.value;
-      }
-
       // Update grade — try with new columns first, fall back to legacy columns
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const gradeUpdate: Record<string, any> = {
@@ -153,8 +122,6 @@ export default function GradeEditorPage() {
         slug: grade.slug,
         dispute_flag: grade.dispute_flag,
         spec_json: specJson,
-        buyer_notes_json: buyerNotesJson,
-        price_impact_json: priceImpactJson,
       };
 
       // New columns — only include if they exist on the grade object (migration applied)
@@ -163,7 +130,6 @@ export default function GradeEditorPage() {
       if ("key_property" in grade) gradeUpdate.key_property = grade.key_property;
       if ("key_property_type" in grade) gradeUpdate.key_property_type = grade.key_property_type;
       if ("overview_image_url" in grade) gradeUpdate.overview_image_url = grade.overview_image_url;
-      if ("upgrade_statement" in grade) gradeUpdate.upgrade_statement = grade.upgrade_statement;
 
       const { error: gradeError } = await supabase
         .from("grades")
@@ -177,8 +143,6 @@ export default function GradeEditorPage() {
           slug: grade.slug,
           dispute_flag: grade.dispute_flag,
           spec_json: specJson,
-          buyer_notes_json: buyerNotesJson,
-          price_impact_json: priceImpactJson,
         };
         const { error: retryError } = await supabase
           .from("grades")
@@ -399,39 +363,6 @@ export default function GradeEditorPage() {
     setTips(newTips);
   }
 
-  async function approveEdgeCase(id: string) {
-    try {
-      const supabase = createClient();
-      const { error: updateError } = await supabase
-        .from("edge_cases")
-        .update({
-          approved: true,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", id);
-      if (updateError) throw updateError;
-      setEdgeCases(
-        edgeCases.map((ec) =>
-          ec.id === id
-            ? { ...ec, approved: true, approved_at: new Date().toISOString() }
-            : ec
-        )
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve");
-    }
-  }
-
-  async function rejectEdgeCase(id: string) {
-    try {
-      const supabase = createClient();
-      await supabase.from("edge_cases").delete().eq("id", id);
-      setEdgeCases(edgeCases.filter((ec) => ec.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject");
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -446,10 +377,9 @@ export default function GradeEditorPage() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
-    { key: "photos", label: "Photos" },
+    { key: "photos", label: "Grade Photos" },
     { key: "products", label: "Grading Issues" },
     { key: "tips", label: "Field Tips" },
-    { key: "exceptions", label: "Exceptions" },
   ];
 
   return (
@@ -532,31 +462,31 @@ export default function GradeEditorPage() {
             <span>Dispute flag</span>
           </label>
 
-          {/* Description (bold intro) */}
+          {/* Commodity description (Bold) */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-              Description (bold intro)
+              Commodity description (Bold)
             </label>
             <textarea
               value={grade.description_bold ?? ""}
               onChange={(e) => setGrade({ ...grade, description_bold: e.target.value || null })}
               rows={2}
-              placeholder="Short bold intro line about this grade..."
+              placeholder="Commodity-level bold intro line..."
               className="w-full rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "#c0c8c5", color: "#262262" }}
             />
           </div>
 
-          {/* Description (body text) */}
+          {/* Grade description */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-              Description (body text)
+              Grade description
             </label>
             <textarea
               value={grade.description_body ?? ""}
               onChange={(e) => setGrade({ ...grade, description_body: e.target.value || null })}
               rows={3}
-              placeholder="Longer description for this grade..."
+              placeholder="Grade-specific description..."
               className="w-full rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "#c0c8c5", color: "#262262" }}
             />
@@ -566,15 +496,18 @@ export default function GradeEditorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-                Key property (e.g. non-magnetic)
+                Key property
               </label>
-              <input
-                type="text"
+              <select
                 value={grade.key_property ?? ""}
                 onChange={(e) => setGrade({ ...grade, key_property: e.target.value || null })}
                 className="w-full rounded-lg border px-3 py-2 text-sm"
                 style={{ borderColor: "#c0c8c5", color: "#262262" }}
-              />
+              >
+                <option value="">None</option>
+                <option value="magnetic">Magnetic</option>
+                <option value="non-magnetic">Non-magnetic</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
@@ -593,58 +526,45 @@ export default function GradeEditorPage() {
             </div>
           </div>
 
-          {/* Overview Image */}
+          {/* Overview Photos */}
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-              Overview Image
+            <label className="block text-sm font-medium mb-2" style={{ color: "#262262" }}>
+              Overview Photos (shown on staff Overview tab)
             </label>
-            {grade.overview_image_url && (
-              <div className="mb-2">
-                <img src={grade.overview_image_url} alt="Overview" className="w-48 h-32 object-cover rounded border" style={{ borderColor: "#c0c8c5" }} />
-              </div>
-            )}
-            <label
-              className="inline-block px-4 py-2 rounded-lg text-sm font-medium text-white cursor-pointer"
-              style={{ backgroundColor: "#12b3c3" }}
-            >
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    const supabase = createClient();
-                    const filePath = `grades/${gradeId}/overview-${Date.now()}-${file.name}`;
-                    const { error: uploadError } = await supabase.storage
-                      .from("grading-media")
-                      .upload(filePath, file);
-                    if (uploadError) throw uploadError;
-                    const { data: { publicUrl } } = supabase.storage.from("grading-media").getPublicUrl(filePath);
-                    setGrade({ ...grade, overview_image_url: publicUrl });
-                  } catch (err) {
-                    setError(err instanceof Error ? err.message : "Upload failed");
-                  }
-                }}
-              />
-            </label>
-          </div>
-
-          {/* Upgrade Statement */}
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-              What would make this a higher grade? (shown to customer)
-            </label>
-            <textarea
-              value={grade.upgrade_statement ?? ""}
-              onChange={(e) => setGrade({ ...grade, upgrade_statement: e.target.value || null })}
-              rows={3}
-              placeholder="How to upgrade this grade to a higher value..."
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: "#c0c8c5", color: "#262262" }}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((slotIndex) => {
+                const acceptablePhotos = photos.filter(p => p.status === "acceptable").sort((a, b) => a.sort_order - b.sort_order);
+                const photo = acceptablePhotos[slotIndex];
+                return (
+                  <div key={slotIndex} className="relative">
+                    {photo ? (
+                      <div className="relative rounded-lg border overflow-hidden" style={{ borderColor: "#c0c8c5" }}>
+                        <img src={photo.url} alt={`Overview ${slotIndex + 1}`} className="w-full h-32 object-cover" />
+                        <button
+                          onClick={() => deletePhoto(photo.id)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#f04e23] text-white text-xs flex items-center justify-center"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center h-32 rounded-lg border-2 border-dashed cursor-pointer hover:bg-gray-50" style={{ borderColor: "#c0c8c5" }}>
+                        <div className="text-center">
+                          <span className="text-2xl text-gray-300">+</span>
+                          <p className="text-[10px] text-gray-400 mt-1">Photo {slotIndex + 1}</p>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePhotoUpload}
+                        />
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Structured spec_json: Conditions & Examples */}
@@ -791,101 +711,6 @@ export default function GradeEditorPage() {
             </button>
           </div>
 
-          {/* Buyer Notes JSON */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "#262262" }}>
-              Buyer Notes (buyer_notes_json)
-            </h3>
-            {buyerNotesPairs.map((pair, i) => (
-              <div key={i} className="flex items-center gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Key"
-                  value={pair.key}
-                  onChange={(e) => {
-                    const updated = [...buyerNotesPairs];
-                    updated[i] = { ...updated[i], key: e.target.value };
-                    setBuyerNotesPairs(updated);
-                  }}
-                  className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                />
-                <input
-                  type="text"
-                  placeholder="Value"
-                  value={pair.value}
-                  onChange={(e) => {
-                    const updated = [...buyerNotesPairs];
-                    updated[i] = { ...updated[i], value: e.target.value };
-                    setBuyerNotesPairs(updated);
-                  }}
-                  className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                />
-                <button
-                  onClick={() => setBuyerNotesPairs(buyerNotesPairs.filter((_, idx) => idx !== i))}
-                  className="text-[#f04e23] text-sm px-2"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() => setBuyerNotesPairs([...buyerNotesPairs, { key: "", value: "" }])}
-              className="text-sm"
-              style={{ color: "#12b3c3" }}
-            >
-              + Add row
-            </button>
-          </div>
-
-          {/* Price Impact JSON */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "#262262" }}>
-              Price Impact (price_impact_json)
-            </h3>
-            {priceImpactPairs.map((pair, i) => (
-              <div key={i} className="flex items-center gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Key"
-                  value={pair.key}
-                  onChange={(e) => {
-                    const updated = [...priceImpactPairs];
-                    updated[i] = { ...updated[i], key: e.target.value };
-                    setPriceImpactPairs(updated);
-                  }}
-                  className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                />
-                <input
-                  type="text"
-                  placeholder="Value"
-                  value={pair.value}
-                  onChange={(e) => {
-                    const updated = [...priceImpactPairs];
-                    updated[i] = { ...updated[i], value: e.target.value };
-                    setPriceImpactPairs(updated);
-                  }}
-                  className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                />
-                <button
-                  onClick={() => setPriceImpactPairs(priceImpactPairs.filter((_, idx) => idx !== i))}
-                  className="text-[#f04e23] text-sm px-2"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() => setPriceImpactPairs([...priceImpactPairs, { key: "", value: "" }])}
-              className="text-sm"
-              style={{ color: "#12b3c3" }}
-            >
-              + Add row
-            </button>
-          </div>
         </div>
       )}
 
@@ -1374,91 +1199,6 @@ export default function GradeEditorPage() {
         </div>
       )}
 
-      {/* Exceptions Tab */}
-      {activeTab === "exceptions" && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold" style={{ color: "#262262" }}>
-            Pending
-          </h3>
-          {edgeCases.filter((ec) => !ec.approved).length === 0 ? (
-            <p className="text-sm" style={{ color: "#262262" }}>
-              No pending edge cases
-            </p>
-          ) : (
-            edgeCases
-              .filter((ec) => !ec.approved)
-              .map((ec) => (
-                <div
-                  key={ec.id}
-                  className="rounded-lg border p-4"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{ec.scenario}</p>
-                      {ec.decision && (
-                        <p className="text-xs" style={{ color: "#c0c8c5" }}>
-                          Decision: {ec.decision}
-                        </p>
-                      )}
-                      <p className="text-xs" style={{ color: "#c0c8c5" }}>
-                        {ec.yard ?? "\u2014"} | {ec.submitted_by ?? "\u2014"} |{" "}
-                        {new Date(ec.submitted_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approveEdgeCase(ec.id)}
-                        className="px-3 py-1 rounded text-xs font-medium text-white"
-                        style={{ backgroundColor: "#12b3c3" }}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => rejectEdgeCase(ec.id)}
-                        className="px-3 py-1 rounded text-xs font-medium border"
-                        style={{ borderColor: "#f04e23", color: "#f04e23" }}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-          )}
-
-          <h3 className="text-sm font-semibold mt-6" style={{ color: "#262262" }}>
-            Approved
-          </h3>
-          {edgeCases.filter((ec) => ec.approved).length === 0 ? (
-            <p className="text-sm" style={{ color: "#262262" }}>
-              No approved edge cases
-            </p>
-          ) : (
-            edgeCases
-              .filter((ec) => ec.approved)
-              .map((ec) => (
-                <div
-                  key={ec.id}
-                  className="rounded-lg border p-4 opacity-75"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                >
-                  <p className="text-sm">{ec.scenario}</p>
-                  {ec.decision && (
-                    <p className="text-xs mt-1" style={{ color: "#c0c8c5" }}>
-                      Decision: {ec.decision}
-                    </p>
-                  )}
-                  <p className="text-xs mt-1" style={{ color: "#c0c8c5" }}>
-                    {ec.yard ?? "\u2014"} |{" "}
-                    {new Date(ec.submitted_at).toLocaleDateString()} | Outcome:{" "}
-                    {ec.outcome ?? "\u2014"}
-                  </p>
-                </div>
-              ))
-          )}
-        </div>
-      )}
     </div>
   );
 }

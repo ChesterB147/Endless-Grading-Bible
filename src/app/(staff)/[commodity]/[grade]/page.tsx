@@ -9,18 +9,16 @@ import {
   GradePhoto,
   Product,
   FieldTip,
-  EdgeCase,
   AnnotationPin,
 } from "@/lib/types";
 
-type TabName = "overview" | "photos" | "grading" | "tips" | "exceptions";
+type TabName = "overview" | "photos" | "grading" | "tips";
 
 const TABS: { key: TabName; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "photos", label: "Photos" },
   { key: "grading", label: "Grading Issues" },
   { key: "tips", label: "Field Tips" },
-  { key: "exceptions", label: "Exceptions" },
 ];
 
 export default function GradeDetailPage() {
@@ -135,13 +133,6 @@ export default function GradeDetailPage() {
             <GradingIssuesTab gradeId={grade.id} grade={grade} />
           )}
           {activeTab === "tips" && <FieldTipsTab gradeId={grade.id} />}
-          {activeTab === "exceptions" && (
-            <ExceptionsTab
-              gradeId={grade.id}
-              commoditySlug={commoditySlug}
-              gradeSlug={gradeSlug}
-            />
-          )}
         </div>
       </main>
     </div>
@@ -950,108 +941,3 @@ function FieldTipsTab({ gradeId }: { gradeId: string }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Tab 5 — Exceptions                                                 */
-/* ------------------------------------------------------------------ */
-
-function ExceptionsTab({
-  gradeId,
-  commoditySlug,
-  gradeSlug,
-}: {
-  gradeId: string;
-  commoditySlug: string;
-  gradeSlug: string;
-}) {
-  const supabase = createClient();
-  const [cases, setCases] = useState<EdgeCase[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetch() {
-      try {
-        const { data, error } = await supabase
-          .from("edge_cases")
-          .select("*")
-          .eq("grade_id", gradeId)
-          .eq("approved", true)
-          .order("submitted_at", { ascending: false });
-
-        if (error) throw error;
-        setCases(data ?? []);
-      } catch (err) {
-        console.error("Failed to fetch edge cases:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gradeId]);
-
-  const outcomeBadge: Record<string, string> = {
-    accepted: "bg-[#12b3c3] text-white",
-    rejected: "bg-[#f04e23] text-white",
-    escalated: "bg-[#c0c8c5] text-gray-800",
-    resolved: "bg-[#262262] text-white",
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#12b3c3] border-t-transparent" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="pb-20">
-      {cases.length === 0 ? (
-        <p className="text-gray-400 text-sm text-center py-12">
-          No approved exceptions yet.
-        </p>
-      ) : (
-        <ul className="p-4 space-y-3">
-          {cases.map((ec) => (
-            <li
-              key={ec.id}
-              className="border border-[#c0c8c5] rounded-lg bg-white p-4"
-            >
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <span className="text-xs text-gray-400">
-                  {new Date(ec.submitted_at).toLocaleDateString()}
-                  {ec.yard ? ` \u2014 ${ec.yard}` : ""}
-                </span>
-                {ec.outcome && (
-                  <span
-                    className={`text-[10px] font-medium px-2 py-0.5 rounded ${
-                      outcomeBadge[ec.outcome] ?? "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {ec.outcome}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-800">{ec.scenario}</p>
-              {ec.decision && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Decision: {ec.decision}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Fixed bottom button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-[#c0c8c5]">
-        <Link
-          href={`/${commoditySlug}/${gradeSlug}/log`}
-          className="block w-full bg-[#12b3c3] text-white text-center font-semibold py-3 rounded-lg"
-        >
-          Log Exception
-        </Link>
-      </div>
-    </div>
-  );
-}

@@ -1075,6 +1075,50 @@ export default function GradeEditorPage() {
                       />
                     </div>
 
+                    {/* Exploded Image */}
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: "#262262" }}>
+                        Exploded Image
+                      </label>
+                      {product.exploded_image_url && (
+                        <div className="mb-2">
+                          <img src={product.exploded_image_url} alt="Exploded view" className="w-48 h-32 object-cover rounded border" style={{ borderColor: "#c0c8c5" }} />
+                        </div>
+                      )}
+                      <label
+                        className="inline-block px-3 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer"
+                        style={{ backgroundColor: "#12b3c3" }}
+                      >
+                        {product.exploded_image_url ? "Replace Image" : "Upload Image"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const supabase = createClient();
+                              const filePath = `products/${product.id}/exploded-${Date.now()}-${file.name}`;
+                              const { error: uploadError } = await supabase.storage
+                                .from("grading-media")
+                                .upload(filePath, file);
+                              if (uploadError) throw uploadError;
+                              const { data: { publicUrl } } = supabase.storage.from("grading-media").getPublicUrl(filePath);
+                              const { error: updateError } = await supabase
+                                .from("products")
+                                .update({ exploded_image_url: publicUrl })
+                                .eq("id", product.id);
+                              if (updateError) throw updateError;
+                              setProducts(products.map((p) => p.id === product.id ? { ...p, exploded_image_url: publicUrl } : p));
+                            } catch (err) {
+                              setError(err instanceof Error ? err.message : "Upload failed");
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
                     {/* Components */}
                     <div>
                       <div className="flex items-center justify-between mb-2">

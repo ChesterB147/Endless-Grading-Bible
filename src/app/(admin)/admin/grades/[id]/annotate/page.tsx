@@ -185,28 +185,100 @@ export default function AnnotatePage() {
         delete it.
       </p>
 
+      {/* Image upload */}
+      {!product.exploded_image_url && (
+        <div className="rounded-lg border-2 border-dashed p-8 text-center" style={{ borderColor: "#c0c8c5" }}>
+          <p className="text-sm mb-3" style={{ color: "#262262" }}>
+            No exploded image yet. Upload one to start annotating.
+          </p>
+          <label
+            className="inline-block px-5 py-2 rounded-lg text-sm font-medium text-white cursor-pointer"
+            style={{ backgroundColor: "#12b3c3" }}
+          >
+            Upload Exploded Image
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !productId) return;
+                try {
+                  const supabase = createClient();
+                  const filePath = `products/${productId}/exploded-${Date.now()}-${file.name}`;
+                  const { error: uploadError } = await supabase.storage
+                    .from("grading-media")
+                    .upload(filePath, file);
+                  if (uploadError) throw uploadError;
+                  const { data: { publicUrl } } = supabase.storage.from("grading-media").getPublicUrl(filePath);
+                  const { error: updateError } = await supabase
+                    .from("products")
+                    .update({ exploded_image_url: publicUrl })
+                    .eq("id", productId);
+                  if (updateError) throw updateError;
+                  setProduct({ ...product, exploded_image_url: publicUrl });
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Upload failed");
+                }
+              }}
+            />
+          </label>
+        </div>
+      )}
+
+      {/* Replace image button (when image exists) */}
+      {product.exploded_image_url && (
+        <div className="flex items-center gap-3">
+          <label
+            className="inline-block px-4 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer"
+            style={{ backgroundColor: "#12b3c3" }}
+          >
+            Replace Image
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !productId) return;
+                try {
+                  const supabase = createClient();
+                  const filePath = `products/${productId}/exploded-${Date.now()}-${file.name}`;
+                  const { error: uploadError } = await supabase.storage
+                    .from("grading-media")
+                    .upload(filePath, file);
+                  if (uploadError) throw uploadError;
+                  const { data: { publicUrl } } = supabase.storage.from("grading-media").getPublicUrl(filePath);
+                  const { error: updateError } = await supabase
+                    .from("products")
+                    .update({ exploded_image_url: publicUrl })
+                    .eq("id", productId);
+                  if (updateError) throw updateError;
+                  setProduct({ ...product, exploded_image_url: publicUrl });
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Upload failed");
+                }
+              }}
+            />
+          </label>
+          <span className="text-xs text-gray-400">Current image loaded below</span>
+        </div>
+      )}
+
       {/* Image container */}
+      {product.exploded_image_url && (
       <div
         ref={imageContainerRef}
         className="relative w-full cursor-crosshair border rounded-lg overflow-hidden"
         style={{ borderColor: "#c0c8c5" }}
         onClick={handleImageClick}
       >
-        {product.exploded_image_url ? (
-          <img
-            src={product.exploded_image_url}
-            alt={product.name}
-            className="w-full block"
-            draggable={false}
-          />
-        ) : (
-          <div
-            className="w-full h-96 flex items-center justify-center"
-            style={{ backgroundColor: "#c0c8c5", opacity: 0.2 }}
-          >
-            <span className="text-sm">No image available</span>
-          </div>
-        )}
+        <img
+          src={product.exploded_image_url}
+          alt={product.name}
+          className="w-full block"
+          draggable={false}
+        />
 
         {/* Existing pins */}
         {pins.map((pin, index) => (
@@ -241,6 +313,7 @@ export default function AnnotatePage() {
           />
         )}
       </div>
+      )}
 
       {/* New pin form */}
       {newPin && (

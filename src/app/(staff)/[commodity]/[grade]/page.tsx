@@ -165,12 +165,20 @@ function OverviewTab({ grade }: { grade: Grade }) {
 
   // Parse spec_json for conditions and examples
   const specJson = grade.spec_json ?? {};
-  const conditionsIntro = specJson.conditions_intro ?? "";
-  const conditionsRaw = specJson.conditions ?? "";
+  // Support both new multi-group format and legacy single-group format
+  let conditionGroups: { intro: string; items: string[] }[] = [];
+  if (specJson.condition_groups && Array.isArray(specJson.condition_groups)) {
+    conditionGroups = specJson.condition_groups.map((g: { intro?: string; items?: string[] }) => ({
+      intro: g.intro ?? "",
+      items: g.items ?? [],
+    }));
+  } else if (specJson.conditions_intro || specJson.conditions) {
+    const legacyItems = specJson.conditions ? specJson.conditions.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+    conditionGroups = [{ intro: specJson.conditions_intro ?? "", items: legacyItems }];
+  }
   const examplesRaw = specJson.examples ?? "";
-  const conditions = conditionsRaw ? conditionsRaw.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
   const examples = examplesRaw ? examplesRaw.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
-  const hasConditionsOrExamples = conditionsIntro || conditions.length > 0 || examples.length > 0;
+  const hasConditionsOrExamples = conditionGroups.length > 0 || examples.length > 0;
 
   return (
     <div className="flex flex-col">
@@ -242,16 +250,20 @@ function OverviewTab({ grade }: { grade: Grade }) {
               <span className="text-white text-[11px] font-semibold uppercase tracking-wider">Conditions</span>
             </div>
             <div className="px-4 py-3" style={{ fontSize: 12, lineHeight: 1.5 }}>
-              {conditionsIntro && (
-                <div className="flex items-start gap-1.5 mb-1.5">
-                  <span className="text-[#f04e23] font-bold flex-shrink-0">&times;</span>
-                  <span className="text-gray-700 font-medium">{conditionsIntro}</span>
-                </div>
-              )}
-              {conditions.map((item: string, i: number) => (
-                <div key={i} className="flex items-start gap-1.5 mb-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#f04e23] flex-shrink-0 mt-1.5" />
-                  <span className="text-gray-600">{item}</span>
+              {conditionGroups.map((group, gi) => (
+                <div key={gi} className={gi > 0 ? "mt-2.5 pt-2.5 border-t border-gray-200" : ""}>
+                  {group.intro && (
+                    <div className="flex items-start gap-1.5 mb-1.5">
+                      <span className="text-[#f04e23] font-bold flex-shrink-0">&times;</span>
+                      <span className="text-gray-700 font-medium">{group.intro}</span>
+                    </div>
+                  )}
+                  {group.items.map((item: string, i: number) => (
+                    <div key={i} className="flex items-start gap-1.5 mb-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f04e23] flex-shrink-0 mt-1.5" />
+                      <span className="text-gray-600">{item}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

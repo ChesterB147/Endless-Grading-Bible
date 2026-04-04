@@ -31,8 +31,7 @@ export default function GradeEditorPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Structured spec_json editors
-  const [conditionsIntro, setConditionsIntro] = useState("");
-  const [conditions, setConditions] = useState<string[]>([]);
+  const [conditionGroups, setConditionGroups] = useState<{ intro: string; items: string[] }[]>([]);
   const [examples, setExamples] = useState<string[]>([]);
 
   // Legacy spec_json pairs (for backwards-compatible entries)
@@ -75,8 +74,19 @@ export default function GradeEditorPage() {
 
       // Parse spec_json for structured editors
       const sj = g.spec_json || {};
-      setConditionsIntro(sj.conditions_intro ?? "");
-      setConditions(sj.conditions ? sj.conditions.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+      // Load condition groups — support both new format and legacy single-group format
+      if (sj.condition_groups && Array.isArray(sj.condition_groups)) {
+        setConditionGroups(sj.condition_groups.map((g: { intro?: string; items?: string[] }) => ({
+          intro: g.intro ?? "",
+          items: g.items ?? [],
+        })));
+      } else if (sj.conditions_intro || sj.conditions) {
+        // Migrate legacy single-group format
+        const legacyItems = sj.conditions ? sj.conditions.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+        setConditionGroups([{ intro: sj.conditions_intro ?? "", items: legacyItems }]);
+      } else {
+        setConditionGroups([]);
+      }
       setExamples(sj.examples ? sj.examples.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
 
       // Legacy key-value pairs (exclude structured keys)
@@ -107,9 +117,12 @@ export default function GradeEditorPage() {
       const supabase = createClient();
 
       // Build spec_json including structured keys
-      const specJson: Record<string, string> = {};
-      if (conditionsIntro.trim()) specJson.conditions_intro = conditionsIntro.trim();
-      if (conditions.filter(Boolean).length > 0) specJson.conditions = conditions.filter(Boolean).join(", ");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const specJson: Record<string, any> = {};
+      const validGroups = conditionGroups
+        .map(g => ({ intro: g.intro.trim(), items: g.items.filter(Boolean) }))
+        .filter(g => g.intro || g.items.length > 0);
+      if (validGroups.length > 0) specJson.condition_groups = validGroups;
       if (examples.filter(Boolean).length > 0) specJson.examples = examples.filter(Boolean).join(", ");
       for (const p of specPairs) {
         if (p.key.trim()) specJson[p.key.trim()] = p.value;
@@ -573,56 +586,87 @@ export default function GradeEditorPage() {
               Conditions & Examples (Overview tab)
             </h3>
 
-            {/* Conditions intro */}
-            <div className="mb-3">
-              <label className="block text-xs font-medium mb-1" style={{ color: "#262262" }}>
-                Conditions intro (e.g. &quot;No contamination:&quot;)
-              </label>
-              <input
-                type="text"
-                value={conditionsIntro}
-                onChange={(e) => setConditionsIntro(e.target.value)}
-                className="w-full rounded-lg border px-3 py-1.5 text-sm"
-                style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                placeholder="No contamination:"
-              />
-            </div>
-
-            {/* Conditions list */}
-            <div className="mb-3">
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium" style={{ color: "#262262" }}>Conditions</label>
+            {/* Condition Groups */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold" style={{ color: "#262262" }}>Condition Groups</label>
                 <button
-                  onClick={() => setConditions([...conditions, ""])}
+                  onClick={() => setConditionGroups([...conditionGroups, { intro: "", items: [] }])}
                   className="text-xs"
                   style={{ color: "#12b3c3" }}
                 >
-                  + Add
+                  + Add Condition Group
                 </button>
               </div>
-              {conditions.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 mb-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#f04e23] flex-shrink-0" />
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => {
-                      const updated = [...conditions];
-                      updated[i] = e.target.value;
-                      setConditions(updated);
-                    }}
-                    className="flex-1 rounded border px-2 py-1 text-xs"
-                    style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                    placeholder="e.g. plastic"
-                  />
+
+              {conditionGroups.map((group, gi) => (
+                <div key={gi} className="mb-3 rounded border p-3" style={{ borderColor: "#c0c8c5" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={group.intro}
+                      onChange={(e) => {
+                        const updated = [...conditionGroups];
+                        updated[gi] = { ...updated[gi], intro: e.target.value };
+                        setConditionGroups(updated);
+                      }}
+                      className="flex-1 rounded border px-2 py-1 text-xs font-medium"
+                      style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                      placeholder="e.g. No contamination:"
+                    />
+                    <button
+                      onClick={() => setConditionGroups(conditionGroups.filter((_, idx) => idx !== gi))}
+                      className="text-xs text-[#f04e23]"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  {group.items.map((item, ii) => (
+                    <div key={ii} className="flex items-center gap-2 mb-1.5 ml-2">
+                      <span className="w-2 h-2 rounded-full bg-[#f04e23] flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={item}
+                        onChange={(e) => {
+                          const updated = [...conditionGroups];
+                          const updatedItems = [...updated[gi].items];
+                          updatedItems[ii] = e.target.value;
+                          updated[gi] = { ...updated[gi], items: updatedItems };
+                          setConditionGroups(updated);
+                        }}
+                        className="flex-1 rounded border px-2 py-1 text-xs"
+                        style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                        placeholder="e.g. plastic"
+                      />
+                      <button
+                        onClick={() => {
+                          const updated = [...conditionGroups];
+                          updated[gi] = { ...updated[gi], items: updated[gi].items.filter((_, idx) => idx !== ii) };
+                          setConditionGroups(updated);
+                        }}
+                        className="text-xs text-[#f04e23]"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
                   <button
-                    onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))}
-                    className="text-xs text-[#f04e23]"
+                    onClick={() => {
+                      const updated = [...conditionGroups];
+                      updated[gi] = { ...updated[gi], items: [...updated[gi].items, ""] };
+                      setConditionGroups(updated);
+                    }}
+                    className="text-xs ml-2"
+                    style={{ color: "#12b3c3" }}
                   >
-                    &times;
+                    + Add Item
                   </button>
                 </div>
               ))}
+
+              {conditionGroups.length === 0 && (
+                <p className="text-xs text-gray-400 italic">No condition groups yet. Click &quot;+ Add Condition Group&quot; to create one.</p>
+              )}
             </div>
 
             {/* Examples list */}

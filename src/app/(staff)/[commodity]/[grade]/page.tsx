@@ -126,21 +126,23 @@ export default function GradeDetailPage() {
         ))}
       </nav>
 
-      {/* Tab content */}
+      {/* Tab content — constrained width on desktop */}
       <main className="flex-1">
-        {activeTab === "overview" && <OverviewTab grade={grade} />}
-        {activeTab === "photos" && <PhotosTab gradeId={grade.id} />}
-        {activeTab === "grading" && (
-          <GradingIssuesTab gradeId={grade.id} grade={grade} />
-        )}
-        {activeTab === "tips" && <FieldTipsTab gradeId={grade.id} />}
-        {activeTab === "exceptions" && (
-          <ExceptionsTab
-            gradeId={grade.id}
-            commoditySlug={commoditySlug}
-            gradeSlug={gradeSlug}
-          />
-        )}
+        <div className="w-full max-w-[900px] mx-auto">
+          {activeTab === "overview" && <OverviewTab grade={grade} />}
+          {activeTab === "photos" && <PhotosTab gradeId={grade.id} />}
+          {activeTab === "grading" && (
+            <GradingIssuesTab gradeId={grade.id} grade={grade} />
+          )}
+          {activeTab === "tips" && <FieldTipsTab gradeId={grade.id} />}
+          {activeTab === "exceptions" && (
+            <ExceptionsTab
+              gradeId={grade.id}
+              commoditySlug={commoditySlug}
+              gradeSlug={gradeSlug}
+            />
+          )}
+        </div>
       </main>
     </div>
   );
@@ -184,9 +186,6 @@ function OverviewTab({ grade }: { grade: Grade }) {
       {/* SECTION 1 — Grade Banner */}
       <div className="px-4 py-5" style={{ backgroundColor: "#262262" }}>
         <h2 className="text-white text-xl" style={{ fontWeight: 500 }}>{grade.name}</h2>
-        {grade.description_bold && (
-          <p className="text-white/60 text-xs mt-1">{grade.description_bold.substring(0, 60)}...</p>
-        )}
       </div>
 
       {/* SECTION 2 — Description Block */}
@@ -204,10 +203,10 @@ function OverviewTab({ grade }: { grade: Grade }) {
           )}
           {grade.key_property && (
             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ backgroundColor: "#f0f0f0" }}>
-              {grade.key_property_type === "negative" ? (
-                <span className="text-[#f04e23] font-bold text-xs">&times;</span>
-              ) : (
+              {grade.key_property_type === "positive" ? (
                 <span className="text-[#1aad46] font-bold text-xs">&#10003;</span>
+              ) : (
+                <span className="text-[#f04e23] font-bold text-xs">&times;</span>
               )}
               <span className="text-xs font-medium" style={{ color: "#262262" }}>{grade.key_property}</span>
             </div>
@@ -221,15 +220,14 @@ function OverviewTab({ grade }: { grade: Grade }) {
           <span className="text-white text-xs font-semibold">Examples</span>
           <span className="text-white/60 text-[10px]">Tap any photo to expand</span>
         </div>
-        <div className="grid grid-cols-2 gap-px bg-gray-200">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-200">
           {[0, 1, 2, 3].map((i) => {
             const photo = photos[i];
             return photo ? (
               <button
                 key={photo.id}
                 onClick={() => setLightboxUrl(photo.url)}
-                className="relative block w-full bg-white"
-                style={{ height: 110 }}
+                className="relative block w-full bg-white h-[110px] md:h-[200px]"
               >
                 <img
                   src={photo.url}
@@ -238,7 +236,7 @@ function OverviewTab({ grade }: { grade: Grade }) {
                 />
               </button>
             ) : (
-              <div key={i} className="bg-gray-100" style={{ height: 110 }} />
+              <div key={i} className="bg-gray-100 h-[110px] md:h-[200px]" />
             );
           })}
         </div>
@@ -246,13 +244,13 @@ function OverviewTab({ grade }: { grade: Grade }) {
 
       {/* SECTION 4 — Conditions and Examples */}
       {hasConditionsOrExamples && (
-        <div className="flex mx-3 mt-3 border rounded-lg overflow-hidden" style={{ borderColor: "#c0c8c5" }}>
+        <div className="flex mx-3 md:mx-4 mt-3 border rounded-lg overflow-hidden" style={{ borderColor: "#c0c8c5" }}>
           {/* Conditions column */}
-          <div className="flex-1 border-r" style={{ borderColor: "#c0c8c5" }}>
-            <div className="px-3 py-1.5" style={{ backgroundColor: "#262262" }}>
+          <div className="flex-1 min-w-0 border-r" style={{ borderColor: "#c0c8c5" }}>
+            <div className="px-4 py-1.5" style={{ backgroundColor: "#262262" }}>
               <span className="text-white text-[11px] font-semibold uppercase tracking-wider">Conditions</span>
             </div>
-            <div className="px-3 py-2.5" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div className="px-4 py-3" style={{ fontSize: 12, lineHeight: 1.5 }}>
               {conditionsIntro && (
                 <div className="flex items-start gap-1.5 mb-1.5">
                   <span className="text-[#f04e23] font-bold flex-shrink-0">&times;</span>
@@ -261,21 +259,21 @@ function OverviewTab({ grade }: { grade: Grade }) {
               )}
               {conditions.map((item: string, i: number) => (
                 <div key={i} className="flex items-start gap-1.5 mb-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#f04e23] flex-shrink-0 mt-1" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f04e23] flex-shrink-0 mt-1.5" />
                   <span className="text-gray-600">{item}</span>
                 </div>
               ))}
             </div>
           </div>
           {/* Examples column */}
-          <div className="flex-1">
-            <div className="px-3 py-1.5" style={{ backgroundColor: "#12b3c3" }}>
+          <div className="flex-1 min-w-0">
+            <div className="px-4 py-1.5" style={{ backgroundColor: "#12b3c3" }}>
               <span className="text-white text-[11px] font-semibold uppercase tracking-wider">Examples</span>
             </div>
-            <div className="px-3 py-2.5" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            <div className="px-4 py-3" style={{ fontSize: 12, lineHeight: 1.5 }}>
               {examples.map((item: string, i: number) => (
                 <div key={i} className="flex items-start gap-1.5 mb-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#12b3c3] flex-shrink-0 mt-1" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#12b3c3] flex-shrink-0 mt-1.5" />
                   <span className="text-gray-600">{item}</span>
                 </div>
               ))}

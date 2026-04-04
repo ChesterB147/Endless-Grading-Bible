@@ -48,7 +48,7 @@ export default function AdminLayout({
           {/* Sidebar header */}
           <div className="flex h-16 items-center px-6">
             <span className="text-lg font-bold text-white tracking-wide">
-              endless metals<sup className="text-xs">®</sup>{" "}
+              endless metals mo{" "}
               <span className="font-normal text-sm opacity-80">admin</span>
             </span>
           </div>
@@ -104,7 +104,7 @@ export default function AdminLayout({
             </svg>
           </button>
           <span className="ml-3 text-sm font-bold text-white">
-            endless metals<sup className="text-xs">®</sup> admin
+            endless metals mo admin
           </span>
         </header>
 

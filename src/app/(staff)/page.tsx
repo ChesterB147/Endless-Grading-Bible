@@ -52,7 +52,7 @@ export default function CommodityIndexPage() {
       {/* Header */}
       <header className="bg-[#12b3c3] px-4 py-4 flex items-center justify-between">
         <span className="text-white font-bold text-lg tracking-tight">
-          endless metals<sup className="text-xs">®</sup> grading
+          endless metals mo grading
         </span>
         <Link href="/search" aria-label="Search">
           <svg
@@ -119,7 +119,7 @@ export default function CommodityIndexPage() {
       {/* Footer */}
       <footer className="pb-6 pt-2 text-center">
         <p className="text-[#262262] text-xs">
-          endless metals<sup>®</sup> — Recycling reimagined.
+          endless metals mo — Recycling reimagined.
         </p>
       </footer>
     </div>

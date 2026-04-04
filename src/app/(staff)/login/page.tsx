@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#12b3c3] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
         <h1 className="text-[#262262] font-bold text-xl text-center mb-8">
-          endless metals<sup className="text-xs">®</sup>
+          endless metals mo
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">

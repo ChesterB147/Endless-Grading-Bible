@@ -143,7 +143,6 @@ export default function GradeEditorPage() {
         .update({
           name: grade.name,
           slug: grade.slug,
-          isri_code: grade.isri_code,
           dispute_flag: grade.dispute_flag,
           overview_image_url: grade.overview_image_url,
           upgrade_statement: grade.upgrade_statement,
@@ -498,20 +497,6 @@ export default function GradeEditorPage() {
                 type="text"
                 value={grade.name}
                 onChange={(e) => setGrade({ ...grade, name: e.target.value })}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: "#c0c8c5", color: "#262262" }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-                ISRI Code <span className="font-normal opacity-60">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={grade.isri_code ?? ""}
-                onChange={(e) =>
-                  setGrade({ ...grade, isri_code: e.target.value || null })
-                }
                 className="w-full rounded-lg border px-3 py-2 text-sm"
                 style={{ borderColor: "#c0c8c5", color: "#262262" }}
               />

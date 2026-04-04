@@ -23,7 +23,6 @@ export default function GradesPage() {
     commodity_id: "",
     name: "",
     slug: "",
-    isri_code: "",
     dispute_flag: false,
   });
   const [saving, setSaving] = useState(false);
@@ -92,7 +91,6 @@ export default function GradesPage() {
         commodity_id: newGrade.commodity_id,
         name: newGrade.name,
         slug: newGrade.slug || slugify(newGrade.name),
-        isri_code: newGrade.isri_code || null,
         dispute_flag: newGrade.dispute_flag,
         spec_json: {},
         buyer_notes_json: {},
@@ -106,7 +104,6 @@ export default function GradesPage() {
         commodity_id: "",
         name: "",
         slug: "",
-        isri_code: "",
         dispute_flag: false,
       });
       fetchData();
@@ -316,20 +313,6 @@ export default function GradesPage() {
                       slug: slugify(name),
                     });
                   }}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
-                  ISRI Code <span className="font-normal opacity-60">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={newGrade.isri_code}
-                  onChange={(e) =>
-                    setNewGrade({ ...newGrade, isri_code: e.target.value })
-                  }
                   className="w-full rounded-lg border px-3 py-2 text-sm"
                   style={{ borderColor: "#c0c8c5", color: "#262262" }}
                 />

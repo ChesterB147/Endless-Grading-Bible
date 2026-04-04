@@ -15,7 +15,6 @@ export interface Grade {
   commodity_id: string;
   name: string;
   slug: string;
-  isri_code: string | null;
   dispute_flag: boolean;
   active: boolean;
   spec_json: Record<string, string>;

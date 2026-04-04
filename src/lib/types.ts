@@ -17,6 +17,10 @@ export interface Grade {
   slug: string;
   dispute_flag: boolean;
   active: boolean;
+  description_bold: string | null;
+  description_body: string | null;
+  key_property: string | null;
+  key_property_type: "positive" | "negative" | null;
   spec_json: Record<string, string>;
   buyer_notes_json: Record<string, string>;
   price_impact_json: Record<string, string>;

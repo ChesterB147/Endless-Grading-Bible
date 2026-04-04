@@ -11,6 +11,8 @@ import type {
   ProductComponent,
   FieldTip,
   EdgeCase,
+  GradingCheckGroup,
+  GradingCheck,
 } from "@/lib/types";
 
 type Tab = "overview" | "photos" | "products" | "tips" | "exceptions";
@@ -143,6 +145,8 @@ export default function GradeEditorPage() {
           slug: grade.slug,
           isri_code: grade.isri_code,
           dispute_flag: grade.dispute_flag,
+          overview_image_url: grade.overview_image_url,
+          upgrade_statement: grade.upgrade_statement,
           spec_json: specJson,
           buyer_notes_json: buyerNotesJson,
           price_impact_json: priceImpactJson,
@@ -166,6 +170,7 @@ export default function GradeEditorPage() {
             name: product.name,
             description: product.description,
             search_terms: product.search_terms,
+            watch_out_items: product.watch_out_items ?? [],
           })
           .eq("id", product.id);
 
@@ -227,7 +232,7 @@ export default function GradeEditorPage() {
           grade_id: gradeId,
           url: publicUrl,
           caption: "",
-          status: "reference",
+          status: "acceptable",
           sort_order: photos.length,
         })
         .select()
@@ -525,6 +530,60 @@ export default function GradeEditorPage() {
             <span>Dispute flag</span>
           </label>
 
+          {/* Overview Image */}
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
+              Overview Image
+            </label>
+            {grade.overview_image_url && (
+              <div className="mb-2">
+                <img src={grade.overview_image_url} alt="Overview" className="w-48 h-32 object-cover rounded border" style={{ borderColor: "#c0c8c5" }} />
+              </div>
+            )}
+            <label
+              className="inline-block px-4 py-2 rounded-lg text-sm font-medium text-white cursor-pointer"
+              style={{ backgroundColor: "#12b3c3" }}
+            >
+              Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const supabase = createClient();
+                    const filePath = `grades/${gradeId}/overview-${Date.now()}-${file.name}`;
+                    const { error: uploadError } = await supabase.storage
+                      .from("grading-media")
+                      .upload(filePath, file);
+                    if (uploadError) throw uploadError;
+                    const { data: { publicUrl } } = supabase.storage.from("grading-media").getPublicUrl(filePath);
+                    setGrade({ ...grade, overview_image_url: publicUrl });
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Upload failed");
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          {/* Upgrade Statement */}
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: "#262262" }}>
+              Upgrade Statement
+            </label>
+            <textarea
+              value={grade.upgrade_statement ?? ""}
+              onChange={(e) => setGrade({ ...grade, upgrade_statement: e.target.value || null })}
+              rows={3}
+              placeholder="How to upgrade this grade to a higher value..."
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "#c0c8c5", color: "#262262" }}
+            />
+          </div>
+
           {/* Spec JSON */}
           <div>
             <h3
@@ -762,7 +821,7 @@ export default function GradeEditorPage() {
                 >
                   <option value="acceptable">Acceptable</option>
                   <option value="reject">Reject</option>
-                  <option value="reference">Reference</option>
+                  <option value="downgrade">Downgrade</option>
                 </select>
                 <button
                   onClick={() => deletePhoto(photo.id)}
@@ -1002,6 +1061,53 @@ export default function GradeEditorPage() {
                         </div>
                       ))}
                     </div>
+
+                    {/* Watch Out Items */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-semibold" style={{ color: "#f04e23" }}>Watch Out Items</h4>
+                        <button
+                          onClick={() => {
+                            const items: string[] = Array.isArray(product.watch_out_items) ? [...product.watch_out_items] : [];
+                            items.push("");
+                            setProducts(products.map((p) => p.id === product.id ? { ...p, watch_out_items: items } : p));
+                          }}
+                          className="text-xs"
+                          style={{ color: "#f04e23" }}
+                        >
+                          + Add Item
+                        </button>
+                      </div>
+                      {(Array.isArray(product.watch_out_items) ? product.watch_out_items : []).map((item: string, wi: number) => (
+                        <div key={wi} className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={item}
+                            onChange={(e) => {
+                              const items = [...(Array.isArray(product.watch_out_items) ? product.watch_out_items : [])];
+                              items[wi] = e.target.value;
+                              setProducts(products.map((p) => p.id === product.id ? { ...p, watch_out_items: items } : p));
+                            }}
+                            className="flex-1 rounded border px-2 py-1 text-xs"
+                            style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                            placeholder="Watch out item..."
+                          />
+                          <button
+                            onClick={() => {
+                              const items = [...(Array.isArray(product.watch_out_items) ? product.watch_out_items : [])];
+                              items.splice(wi, 1);
+                              setProducts(products.map((p) => p.id === product.id ? { ...p, watch_out_items: items } : p));
+                            }}
+                            className="text-xs text-[#f04e23]"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Grading Check Groups (read-only summary for now — full CRUD below) */}
+                    <GradingCheckGroupsEditor productId={product.id} />
                   </div>
                 )}
               </div>
@@ -1217,6 +1323,219 @@ export default function GradeEditorPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Grading Check Groups Editor (inline in Products tab)               */
+/* ------------------------------------------------------------------ */
+
+function GradingCheckGroupsEditor({ productId }: { productId: string }) {
+  const [groups, setGroups] = useState<(GradingCheckGroup & { grading_checks: GradingCheck[] })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
+  async function fetchGroups() {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("grading_check_groups")
+        .select("*, grading_checks(*)")
+        .eq("product_id", productId)
+        .order("sort_order");
+      if (error) throw error;
+      setGroups((data ?? []).map((g: GradingCheckGroup & { grading_checks: GradingCheck[] }) => ({
+        ...g,
+        grading_checks: (g.grading_checks ?? []).sort((a: GradingCheck, b: GradingCheck) => a.sort_order - b.sort_order),
+      })));
+    } catch (err) {
+      console.error("Failed to fetch grading check groups:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addGroup() {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("grading_check_groups")
+        .insert({
+          product_id: productId,
+          label: "New Group",
+          group_type: "custom",
+          sort_order: groups.length,
+        })
+        .select("*, grading_checks(*)")
+        .single();
+      if (error) throw error;
+      setGroups([...groups, { ...data, grading_checks: [] }]);
+    } catch (err) {
+      console.error("Failed to add group:", err);
+    }
+  }
+
+  async function updateGroup(groupId: string, updates: Partial<GradingCheckGroup>) {
+    try {
+      const supabase = createClient();
+      await supabase.from("grading_check_groups").update(updates).eq("id", groupId);
+      setGroups(groups.map((g) => g.id === groupId ? { ...g, ...updates } : g));
+    } catch (err) {
+      console.error("Failed to update group:", err);
+    }
+  }
+
+  async function deleteGroup(groupId: string) {
+    try {
+      const supabase = createClient();
+      await supabase.from("grading_check_groups").delete().eq("id", groupId);
+      setGroups(groups.filter((g) => g.id !== groupId));
+    } catch (err) {
+      console.error("Failed to delete group:", err);
+    }
+  }
+
+  async function addCheck(groupId: string) {
+    try {
+      const supabase = createClient();
+      const group = groups.find((g) => g.id === groupId);
+      const { data, error } = await supabase
+        .from("grading_checks")
+        .insert({
+          group_id: groupId,
+          label: "New Check",
+          result: "not_selected",
+          explain_text: "",
+          sort_order: group?.grading_checks?.length ?? 0,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setGroups(groups.map((g) =>
+        g.id === groupId ? { ...g, grading_checks: [...g.grading_checks, data] } : g
+      ));
+    } catch (err) {
+      console.error("Failed to add check:", err);
+    }
+  }
+
+  async function updateCheck(groupId: string, checkId: string, updates: Partial<GradingCheck>) {
+    try {
+      const supabase = createClient();
+      await supabase.from("grading_checks").update(updates).eq("id", checkId);
+      setGroups(groups.map((g) =>
+        g.id === groupId
+          ? { ...g, grading_checks: g.grading_checks.map((c) => c.id === checkId ? { ...c, ...updates } : c) }
+          : g
+      ));
+    } catch (err) {
+      console.error("Failed to update check:", err);
+    }
+  }
+
+  async function deleteCheck(groupId: string, checkId: string) {
+    try {
+      const supabase = createClient();
+      await supabase.from("grading_checks").delete().eq("id", checkId);
+      setGroups(groups.map((g) =>
+        g.id === groupId
+          ? { ...g, grading_checks: g.grading_checks.filter((c) => c.id !== checkId) }
+          : g
+      ));
+    } catch (err) {
+      console.error("Failed to delete check:", err);
+    }
+  }
+
+  const groupTypeColors: Record<string, string> = {
+    magnetic: "#12b3c3",
+    brass_content: "#262262",
+    contamination: "#f04e23",
+    custom: "#c0c8c5",
+  };
+
+  if (loading) return <p className="text-xs" style={{ color: "#c0c8c5" }}>Loading checks...</p>;
+
+  return (
+    <div className="mt-4 pt-4 border-t" style={{ borderColor: "#c0c8c5" }}>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-xs font-semibold" style={{ color: "#262262" }}>Grading Check Groups</h4>
+        <button onClick={addGroup} className="text-xs" style={{ color: "#12b3c3" }}>
+          + Add Group
+        </button>
+      </div>
+
+      {groups.map((group) => (
+        <div key={group.id} className="mb-4 rounded border p-3" style={{ borderColor: "#c0c8c5" }}>
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={group.label}
+              onChange={(e) => updateGroup(group.id, { label: e.target.value })}
+              className="flex-1 rounded border px-2 py-1 text-xs font-semibold"
+              style={{ borderColor: "#c0c8c5", color: groupTypeColors[group.group_type] ?? "#262262" }}
+            />
+            <select
+              value={group.group_type}
+              onChange={(e) => updateGroup(group.id, { group_type: e.target.value as GradingCheckGroup["group_type"] })}
+              className="rounded border px-2 py-1 text-xs"
+              style={{ borderColor: "#c0c8c5", color: "#262262" }}
+            >
+              <option value="magnetic">Magnetic</option>
+              <option value="brass_content">Brass Content</option>
+              <option value="contamination">Contamination</option>
+              <option value="custom">Custom</option>
+            </select>
+            <button onClick={() => deleteGroup(group.id)} className="text-xs text-[#f04e23]">Delete</button>
+          </div>
+
+          {/* Check rows */}
+          {group.grading_checks.map((check) => (
+            <div key={check.id} className="flex flex-col gap-1 mb-2 ml-2 pl-2 border-l-2" style={{ borderColor: groupTypeColors[group.group_type] ?? "#c0c8c5" }}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={check.label}
+                  onChange={(e) => updateCheck(group.id, check.id, { label: e.target.value })}
+                  className="flex-1 rounded border px-2 py-1 text-xs"
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                  placeholder="Check label"
+                />
+                <select
+                  value={check.result}
+                  onChange={(e) => updateCheck(group.id, check.id, { result: e.target.value as GradingCheck["result"] })}
+                  className="rounded border px-2 py-1 text-xs"
+                  style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                >
+                  <option value="good">Good</option>
+                  <option value="selected">Selected</option>
+                  <option value="not_selected">Not Selected</option>
+                  <option value="contam_present">Contam Present</option>
+                  <option value="contam_clear">Contam Clear</option>
+                </select>
+                <button onClick={() => deleteCheck(group.id, check.id)} className="text-xs text-[#f04e23]">x</button>
+              </div>
+              <textarea
+                value={check.explain_text ?? ""}
+                onChange={(e) => updateCheck(group.id, check.id, { explain_text: e.target.value })}
+                rows={1}
+                className="rounded border px-2 py-1 text-xs"
+                style={{ borderColor: "#c0c8c5", color: "#262262" }}
+                placeholder="Explain text (shown when tapped)..."
+              />
+            </div>
+          ))}
+
+          <button onClick={() => addCheck(group.id)} className="text-xs ml-2" style={{ color: "#12b3c3" }}>
+            + Add Check
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

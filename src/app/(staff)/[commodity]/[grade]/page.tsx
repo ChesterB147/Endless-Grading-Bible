@@ -13,12 +13,12 @@ import {
   AnnotationPin,
 } from "@/lib/types";
 
-type TabName = "overview" | "photos" | "products" | "tips" | "exceptions";
+type TabName = "overview" | "photos" | "grading" | "tips" | "exceptions";
 
 const TABS: { key: TabName; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "photos", label: "Photos" },
-  { key: "products", label: "Products" },
+  { key: "grading", label: "Grading Issues" },
   { key: "tips", label: "Field Tips" },
   { key: "exceptions", label: "Exceptions" },
 ];
@@ -61,7 +61,7 @@ export default function GradeDetailPage() {
             viewed_at: new Date().toISOString(),
           });
         } catch {
-          // Non-critical, ignore view tracking failures
+          // Non-critical
         }
       } catch (err) {
         console.error("Failed to fetch grade:", err);
@@ -130,7 +130,9 @@ export default function GradeDetailPage() {
       <main className="flex-1">
         {activeTab === "overview" && <OverviewTab specJson={grade.spec_json} />}
         {activeTab === "photos" && <PhotosTab gradeId={grade.id} />}
-        {activeTab === "products" && <ProductsTab gradeId={grade.id} />}
+        {activeTab === "grading" && (
+          <GradingIssuesTab gradeId={grade.id} upgradeStatement={grade.upgrade_statement} />
+        )}
         {activeTab === "tips" && <FieldTipsTab gradeId={grade.id} />}
         {activeTab === "exceptions" && (
           <ExceptionsTab
@@ -182,7 +184,7 @@ function OverviewTab({ specJson }: { specJson: Record<string, string> }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Tab 2 — Photos                                                     */
+/*  Tab 2 — Photos (updated labels)                                    */
 /* ------------------------------------------------------------------ */
 
 function PhotosTab({ gradeId }: { gradeId: string }) {
@@ -212,10 +214,10 @@ function PhotosTab({ gradeId }: { gradeId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gradeId]);
 
-  const statusColor: Record<string, string> = {
-    acceptable: "bg-[#12b3c3]",
-    reject: "bg-[#f04e23]",
-    reference: "bg-[#262262]",
+  const statusConfig: Record<string, { bg: string; label: string }> = {
+    acceptable: { bg: "bg-[#12b3c3]", label: "Acceptable" },
+    downgrade: { bg: "bg-[#262262]", label: "Downgrade" },
+    reject: { bg: "bg-[#f04e23]", label: "Reject" },
   };
 
   if (loading) {
@@ -237,33 +239,34 @@ function PhotosTab({ gradeId }: { gradeId: string }) {
   return (
     <>
       <div className="grid grid-cols-2 gap-3 p-4">
-        {photos.map((photo) => (
-          <button
-            key={photo.id}
-            onClick={() => setFullscreen(photo)}
-            className="rounded-lg overflow-hidden border border-[#c0c8c5] bg-white text-left"
-          >
-            <img
-              src={photo.url}
-              alt={photo.caption ?? "Grade photo"}
-              className="w-full aspect-square object-cover"
-            />
-            <div className="p-2">
-              {photo.caption && (
-                <p className="text-xs text-gray-600 line-clamp-2 mb-1">
-                  {photo.caption}
-                </p>
-              )}
-              <span
-                className={`inline-block text-white text-[10px] font-medium px-2 py-0.5 rounded ${
-                  statusColor[photo.status] ?? "bg-gray-400"
-                }`}
-              >
-                {photo.status}
-              </span>
-            </div>
-          </button>
-        ))}
+        {photos.map((photo) => {
+          const config = statusConfig[photo.status] ?? { bg: "bg-gray-400", label: photo.status };
+          return (
+            <button
+              key={photo.id}
+              onClick={() => setFullscreen(photo)}
+              className="rounded-lg overflow-hidden border border-[#c0c8c5] bg-white text-left"
+            >
+              <img
+                src={photo.url}
+                alt={photo.caption ?? "Grade photo"}
+                className="w-full aspect-square object-cover"
+              />
+              <div className="p-2">
+                {photo.caption && (
+                  <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+                    {photo.caption}
+                  </p>
+                )}
+                <span
+                  className={`inline-block text-white text-[10px] font-medium px-2 py-0.5 rounded ${config.bg}`}
+                >
+                  {config.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Fullscreen overlay */}
@@ -296,21 +299,51 @@ function PhotosTab({ gradeId }: { gradeId: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Tab 3 — Products                                                   */
+/*  Tab 3 — Grading Issues (replaces Products)                         */
 /* ------------------------------------------------------------------ */
 
-function ProductsTab({ gradeId }: { gradeId: string }) {
+const RESULT_CONFIG: Record<string, { bg: string; text: string; textColor: string; render: boolean }> = {
+  good: { bg: "bg-[#1aad46]", text: "\u2713 No", textColor: "text-white", render: true },
+  selected: { bg: "bg-[#12b3c3]", text: "\u2713 Yes", textColor: "text-white", render: true },
+  not_selected: { bg: "", text: "", textColor: "", render: false },
+  contam_present: { bg: "bg-[#f04e23]", text: "\u2717 Present", textColor: "text-white", render: true },
+  contam_clear: { bg: "bg-[#f0f0f0]", text: "No", textColor: "text-gray-500", render: true },
+};
+
+const GROUP_HEADING_COLOR: Record<string, string> = {
+  magnetic: "#12b3c3",
+  brass_content: "#262262",
+  contamination: "#f04e23",
+  custom: "#c0c8c5",
+};
+
+const RESULT_EXPAND_COLOR: Record<string, string> = {
+  good: "#1aad46",
+  selected: "#12b3c3",
+  contam_present: "#f04e23",
+  contam_clear: "#c0c8c5",
+  not_selected: "#c0c8c5",
+};
+
+function GradingIssuesTab({
+  gradeId,
+  upgradeStatement,
+}: {
+  gradeId: string;
+  upgradeStatement: string | null;
+}) {
   const supabase = createClient();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetch() {
       try {
         const { data, error } = await supabase
           .from("products")
-          .select("*, product_components(*)")
+          .select("*, product_components(*), grading_check_groups(*, grading_checks(*))")
           .eq("grade_id", gradeId)
           .order("sort_order");
 
@@ -344,106 +377,235 @@ function ProductsTab({ gradeId }: { gradeId: string }) {
   if (products.length === 0) {
     return (
       <p className="text-gray-400 text-sm text-center py-12">
-        No products added yet.
+        No grading issues added yet.
       </p>
     );
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {products.map((product) => (
-        <div
-          key={product.id}
-          className="border border-[#c0c8c5] rounded-lg bg-white overflow-hidden"
-        >
-          <button
-            onClick={() =>
-              setExpanded(expanded === product.id ? null : product.id)
-            }
-            className="w-full px-4 py-3 flex items-center justify-between text-left"
+    <div className="p-4 space-y-6">
+      {products.map((product) => {
+        const groups = (product.grading_check_groups ?? []).sort(
+          (a, b) => a.sort_order - b.sort_order
+        );
+        const watchOuts: string[] = Array.isArray(product.watch_out_items)
+          ? product.watch_out_items
+          : [];
+
+        return (
+          <div
+            key={product.id}
+            className="border border-[#c0c8c5] rounded-lg bg-white overflow-hidden"
           >
-            <div>
-              <h3 className="text-[#262262] font-semibold text-sm">
-                {product.name}
-              </h3>
+            {/* Product header */}
+            <div className="px-4 py-3 border-b border-[#c0c8c5]">
+              <h3 className="text-[#262262] font-bold text-sm">{product.name}</h3>
               {product.description && (
                 <p className="text-gray-500 text-xs mt-0.5">{product.description}</p>
               )}
             </div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-4 w-4 text-gray-400 transition-transform ${
-                expanded === product.id ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
 
-          {expanded === product.id && (
-            <div className="border-t border-[#c0c8c5] px-4 py-3">
-              {/* Exploded image with annotation pins */}
-              {product.exploded_image_url && (
-                <div className="relative mb-3">
+            {/* Exploded image — full width, tap to expand */}
+            {product.exploded_image_url && (
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setExpandedImage(
+                      expandedImage === product.id ? null : product.id
+                    )
+                  }
+                  className="w-full"
+                >
                   <img
                     src={product.exploded_image_url}
                     alt={`${product.name} exploded view`}
-                    className="w-full rounded"
+                    className="w-full"
                   />
-                  {product.annotation_pins_json?.map(
-                    (pin: AnnotationPin, i: number) => (
-                      <div
-                        key={i}
-                        className={`absolute w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold ${
-                          statusDot[pin.status] ?? "bg-gray-400"
-                        }`}
-                        style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                        title={`${pin.component_name}: ${pin.note}`}
-                      >
-                        {i + 1}
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
+                </button>
+                {/* Annotation pins */}
+                {product.annotation_pins_json?.map(
+                  (pin: AnnotationPin, i: number) => (
+                    <div
+                      key={i}
+                      className={`absolute w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold ${
+                        statusDot[pin.status] ?? "bg-gray-400"
+                      }`}
+                      style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+                      title={`${pin.component_name}: ${pin.note}`}
+                    >
+                      {i + 1}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
 
-              {/* Component list */}
-              <ul className="space-y-2">
+            {/* Fullscreen image overlay */}
+            {expandedImage === product.id && product.exploded_image_url && (
+              <div
+                className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+                onClick={() => setExpandedImage(null)}
+              >
+                <button
+                  className="absolute top-4 right-4 text-white text-2xl font-bold z-50"
+                  onClick={() => setExpandedImage(null)}
+                >
+                  &times;
+                </button>
+                <img
+                  src={product.exploded_image_url}
+                  alt={`${product.name} expanded`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            )}
+
+            {/* Component pills row */}
+            {(product.product_components ?? []).length > 0 && (
+              <div className="px-4 py-2 flex flex-wrap gap-1.5 border-b border-[#c0c8c5]">
                 {(product.product_components ?? [])
                   .sort((a, b) => a.sort_order - b.sort_order)
                   .map((comp) => (
-                    <li key={comp.id} className="flex items-start gap-2">
+                    <span
+                      key={comp.id}
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-gray-50 border border-[#c0c8c5]"
+                    >
                       <span
-                        className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
                           statusDot[comp.status] ?? "bg-gray-400"
                         }`}
                       />
-                      <div>
-                        <span className="text-sm text-gray-800 font-medium">
-                          {comp.name}
+                      <span className="text-[#262262] font-medium">{comp.name}</span>
+                      {comp.status === "price_out" && (
+                        <span className="text-[#f04e23] text-[9px] font-medium">
+                          price out
                         </span>
-                        {comp.status === "price_out" && (
-                          <span className="ml-1.5 text-[#f04e23] text-[10px] font-medium">
-                            price out
-                          </span>
-                        )}
-                        {comp.note && (
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {comp.note}
-                          </p>
-                        )}
+                      )}
+                    </span>
+                  ))}
+              </div>
+            )}
+
+            {/* Grading assessment block — grouped checks */}
+            {groups.length > 0 && (
+              <div className="px-4 py-3 space-y-4">
+                {groups.map((group) => {
+                  const checks = (group.grading_checks ?? []).sort(
+                    (a, b) => a.sort_order - b.sort_order
+                  );
+                  const headingColor =
+                    GROUP_HEADING_COLOR[group.group_type] ?? "#c0c8c5";
+
+                  return (
+                    <div key={group.id}>
+                      {/* Group heading */}
+                      <div
+                        className="text-xs font-bold uppercase tracking-wide mb-2 px-1"
+                        style={{ color: headingColor }}
+                      >
+                        {group.label}
                       </div>
+
+                      {/* Check rows */}
+                      <div className="rounded-lg border border-[#c0c8c5] overflow-hidden">
+                        {checks.map((check, ci) => {
+                          const rc =
+                            RESULT_CONFIG[check.result] ?? RESULT_CONFIG.not_selected;
+                          const isExpanded = expandedCheck === check.id;
+                          const expandColor =
+                            RESULT_EXPAND_COLOR[check.result] ?? "#c0c8c5";
+
+                          return (
+                            <div key={check.id}>
+                              <button
+                                onClick={() =>
+                                  setExpandedCheck(
+                                    isExpanded ? null : check.id
+                                  )
+                                }
+                                className={`w-full flex items-center justify-between px-3 py-2.5 text-left ${
+                                  ci > 0 ? "border-t border-[#c0c8c5]" : ""
+                                }`}
+                              >
+                                <span className="text-[#262262] text-xs font-medium flex-1">
+                                  {check.label}
+                                </span>
+                                {rc.render && (
+                                  <span
+                                    className={`${rc.bg} ${rc.textColor} text-[10px] font-semibold px-2.5 py-0.5 rounded-full ml-2 whitespace-nowrap`}
+                                  >
+                                    {rc.text}
+                                  </span>
+                                )}
+                              </button>
+
+                              {/* Expanded explain_text */}
+                              {isExpanded && check.explain_text && (
+                                <div
+                                  className="px-3 pb-2.5 -mt-1"
+                                >
+                                  <div
+                                    className="text-xs leading-relaxed p-2.5 rounded-md"
+                                    style={{
+                                      backgroundColor: `${expandColor}10`,
+                                      borderLeft: `3px solid ${expandColor}`,
+                                      color: "#333",
+                                    }}
+                                  >
+                                    {check.explain_text}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Upgrade statement block */}
+            {upgradeStatement && (
+              <div className="mx-4 mb-3 rounded-lg p-3" style={{ backgroundColor: "#12b3c310", borderLeft: "4px solid #12b3c3" }}>
+                <div className="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#12b3c3" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "#12b3c3" }}>
+                      Upgrade path
+                    </p>
+                    <p className="text-xs leading-relaxed" style={{ color: "#262262" }}>
+                      {upgradeStatement}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Watch out block */}
+            {watchOuts.length > 0 && (
+              <div className="mx-4 mb-3 rounded-lg p-3" style={{ backgroundColor: "#f04e2310", borderLeft: "4px solid #f04e23" }}>
+                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "#f04e23" }}>
+                  Watch out
+                </p>
+                <ul className="space-y-1.5">
+                  {watchOuts.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[#f04e23] text-xs mt-0.5 flex-shrink-0">&#x26A0;</span>
+                      <span className="text-xs leading-relaxed" style={{ color: "#262262" }}>
+                        {item}
+                      </span>
                     </li>
                   ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -598,7 +760,7 @@ function ExceptionsTab({
               <div className="flex items-start justify-between gap-2 mb-1">
                 <span className="text-xs text-gray-400">
                   {new Date(ec.submitted_at).toLocaleDateString()}
-                  {ec.yard ? ` — ${ec.yard}` : ""}
+                  {ec.yard ? ` \u2014 ${ec.yard}` : ""}
                 </span>
                 {ec.outcome && (
                   <span

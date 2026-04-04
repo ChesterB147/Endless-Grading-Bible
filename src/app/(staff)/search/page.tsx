@@ -71,7 +71,7 @@ function SearchPage() {
           .from("grades")
           .select("*, commodities(name, slug)")
           .eq("active", true)
-          .or(`name.ilike.${pattern},isri_code.ilike.${pattern}`)
+          .or(`name.ilike.${pattern}`)
           .limit(20);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,11 +220,6 @@ function SearchPage() {
                   >
                     <p className="text-sm font-medium text-gray-800">
                       {r.grade.name}
-                      {r.grade.isri_code && (
-                        <span className="ml-2 text-gray-400 font-mono text-xs">
-                          {r.grade.isri_code}
-                        </span>
-                      )}
                     </p>
                     <p className="text-xs text-gray-400">
                       {r.commodityName} &rsaquo; {r.grade.name} &middot; Grade

@@ -21,6 +21,8 @@ export interface Grade {
   spec_json: Record<string, string>;
   buyer_notes_json: Record<string, string>;
   price_impact_json: Record<string, string>;
+  overview_image_url: string | null;
+  upgrade_statement: string | null;
   sort_order: number;
   created_at: string;
   commodities?: Commodity;
@@ -43,9 +45,11 @@ export interface Product {
   search_terms: string[];
   exploded_image_url: string | null;
   annotation_pins_json: AnnotationPin[];
+  watch_out_items: string[];
   sort_order: number;
   created_at: string;
   product_components?: ProductComponent[];
+  grading_check_groups?: GradingCheckGroup[];
 }
 
 export interface AnnotationPin {
@@ -80,9 +84,27 @@ export interface GradePhoto {
   grade_id: string;
   url: string;
   caption: string | null;
-  status: "acceptable" | "reject" | "reference";
+  status: "acceptable" | "downgrade" | "reject";
   sort_order: number;
   created_at: string;
+}
+
+export interface GradingCheckGroup {
+  id: string;
+  product_id: string;
+  label: string;
+  group_type: "magnetic" | "brass_content" | "contamination" | "custom";
+  sort_order: number;
+  grading_checks?: GradingCheck[];
+}
+
+export interface GradingCheck {
+  id: string;
+  group_id: string;
+  label: string;
+  result: "selected" | "not_selected" | "contam_present" | "contam_clear" | "good";
+  explain_text: string | null;
+  sort_order: number;
 }
 
 export interface EdgeCase {

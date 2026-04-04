@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "endless metals mo grading",
+  title: "endless metals grading",
   description: "Scrap metal grading standards for yard staff",
   manifest: "/manifest.json",
   appleWebApp: {

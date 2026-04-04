@@ -38,9 +38,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#12b3c3] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-[#262262] font-bold text-xl text-center mb-8">
-          endless metals mo
-        </h1>
+        <div className="flex flex-col items-center mb-8">
+          <img src="/icons/Endless Logo_Navy.png" alt="endless metals" className="h-12 w-auto mb-2" />
+          <h1 className="text-[#262262] font-bold text-xl text-center">
+            endless metals
+          </h1>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

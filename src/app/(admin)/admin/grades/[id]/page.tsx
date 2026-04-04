@@ -146,25 +146,48 @@ export default function GradeEditorPage() {
         if (p.key.trim()) priceImpactJson[p.key.trim()] = p.value;
       }
 
-      // Update grade
+      // Update grade — try with new columns first, fall back to legacy columns
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const gradeUpdate: Record<string, any> = {
+        name: grade.name,
+        slug: grade.slug,
+        dispute_flag: grade.dispute_flag,
+        spec_json: specJson,
+        buyer_notes_json: buyerNotesJson,
+        price_impact_json: priceImpactJson,
+      };
+
+      // New columns — only include if they exist on the grade object (migration applied)
+      if ("description_bold" in grade) gradeUpdate.description_bold = grade.description_bold;
+      if ("description_body" in grade) gradeUpdate.description_body = grade.description_body;
+      if ("key_property" in grade) gradeUpdate.key_property = grade.key_property;
+      if ("key_property_type" in grade) gradeUpdate.key_property_type = grade.key_property_type;
+      if ("overview_image_url" in grade) gradeUpdate.overview_image_url = grade.overview_image_url;
+      if ("upgrade_statement" in grade) gradeUpdate.upgrade_statement = grade.upgrade_statement;
+
       const { error: gradeError } = await supabase
         .from("grades")
-        .update({
+        .update(gradeUpdate)
+        .eq("id", gradeId);
+
+      // If it fails due to unknown columns, retry with only safe columns
+      if (gradeError) {
+        const safeUpdate = {
           name: grade.name,
           slug: grade.slug,
           dispute_flag: grade.dispute_flag,
-          description_bold: grade.description_bold,
-          description_body: grade.description_body,
-          key_property: grade.key_property,
-          key_property_type: grade.key_property_type,
-          overview_image_url: grade.overview_image_url,
-          upgrade_statement: grade.upgrade_statement,
           spec_json: specJson,
           buyer_notes_json: buyerNotesJson,
           price_impact_json: priceImpactJson,
-        })
-        .eq("id", gradeId);
-      if (gradeError) throw gradeError;
+        };
+        const { error: retryError } = await supabase
+          .from("grades")
+          .update(safeUpdate)
+          .eq("id", gradeId);
+        if (retryError) throw retryError;
+        // Warn user that new fields didn't save
+        setError("Saved core fields, but new fields (description, key property, etc.) require a database migration. Ask your admin to run migration-v4-descriptions.sql in Supabase SQL Editor.");
+      }
 
       // Update photos
       for (const photo of photos) {

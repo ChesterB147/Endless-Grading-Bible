@@ -200,7 +200,7 @@ export default function GradesPage() {
                 Grade Name
               </th>
               <th className="px-4 py-2.5 text-left text-white font-medium">
-                Products
+                Issues
               </th>
               <th className="px-4 py-2.5 text-left text-white font-medium">
                 Photos

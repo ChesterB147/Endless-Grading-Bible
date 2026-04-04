@@ -429,7 +429,7 @@ export default function GradeEditorPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "photos", label: "Photos" },
-    { key: "products", label: "Products" },
+    { key: "products", label: "Grading Issues" },
     { key: "tips", label: "Field Tips" },
     { key: "exceptions", label: "Exceptions" },
   ];
@@ -849,7 +849,7 @@ export default function GradeEditorPage() {
             className="px-4 py-2 rounded-lg text-sm font-medium text-white"
             style={{ backgroundColor: "#12b3c3" }}
           >
-            Add Product
+            Add Grading Issue
           </button>
 
           {products.map((product) => {
@@ -1116,7 +1116,7 @@ export default function GradeEditorPage() {
 
           {products.length === 0 && (
             <p className="text-sm" style={{ color: "#262262" }}>
-              No products yet
+              No grading issues yet
             </p>
           )}
         </div>

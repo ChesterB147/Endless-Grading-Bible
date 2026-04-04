@@ -494,13 +494,27 @@ function GradingIssuesTab({
   useEffect(() => {
     async function fetch() {
       try {
-        const { data, error } = await supabase
+        // Try full query with grading checks first
+        const fullRes = await supabase
           .from("products")
           .select("*, product_components(*), grading_check_groups(*, grading_checks(*))")
           .eq("grade_id", gradeId)
           .order("sort_order");
 
-        if (error) throw error;
+        let data = fullRes.data;
+
+        // If the full query fails (tables may not exist yet), fall back to basic query
+        if (fullRes.error) {
+          console.warn("Full product query failed, trying without grading checks:", fullRes.error.message);
+          const fallback = await supabase
+            .from("products")
+            .select("*, product_components(*)")
+            .eq("grade_id", gradeId)
+            .order("sort_order");
+          data = fallback.data;
+          if (fallback.error) throw fallback.error;
+        }
+
         setProducts(data ?? []);
         // Auto-expand first product
         if (data && data.length > 0) {
